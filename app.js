@@ -41,12 +41,15 @@ app.get('/', function (req, res) {
   res.render('index', { currentTime: new Date() });
 });
 
+// 模拟打开页面查看数据
 app.get('/user', function (req, res) {
   res.render('user');
 });
 app.get('/user1', function (req, res) {
   res.render('user1');
 });
+
+// 模拟球
 app.get('/ball', function (req, res) {
   res.render('ball');
 });
@@ -97,8 +100,6 @@ io.on('connection', function (socket) {
   socket.on('disconnect', function () {
     console.log('user disconnected');
   });
-
-
 });
 
 
