@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocketIO Demo</title>
+    <script src="https://libs.cdnjs.net/socket.io/2.3.0/socket.io.js"></script>
+</head>
+
+<body>
+    <h1>Hello Ball</h1>
+
+    <script>
+        var MY_CLIENT_ID = 'client001';
+        var timer;
+        var socket = io('http://localhost:3000');
+        socket.on('connect', function () {
+            console.log('ball connected');
+        });
+        socket.on('ball_online', function (chatMap) {
+            console.log('ball_online', chatMap);
+            if (chatMap[MY_CLIENT_ID] > 0) {
+                sendData();
+            }
+        });
+
+        socket.on('clientEnter', function (data) {
+            if (data.clientId == MY_CLIENT_ID) {
+                sendData();
+            }
+        });
+        socket.on('clientLeave', function (data) {
+            console.log('clientLeave', data);
+
+            if (!(MY_CLIENT_ID in data) || (MY_CLIENT_ID in data && data[MY_CLIENT_ID] === 0)) {
+                clearInterval(timer);
+                timer = undefined;
+            }
+        });
+
+        function sendData() {
+            if (timer !== undefined) return;
+            clearInterval(timer);
+            timer = setInterval(function () {
+                var payload = {
+                    api: 100,
+                    clientId: 's0001',
+                    spo2: [0, 1, 2, 3, 4, 5, 6, 7],
+                    pr: [68, 70, 100],
+                    time: new Date(),
+                    clientId: MY_CLIENT_ID,
+                };
+                console.log(payload);
+
+                socket.emit('BALL_AHI_UPDATE', payload);
+            }, 2000);
+        }
+    </script>
+</body>
+
+</html>

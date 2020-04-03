@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocketIO Demo</title>
+    <script src="https://libs.cdnjs.net/socket.io/2.3.0/socket.io.js"></script>
+</head>
+
+<body>
+    <h1>Hello User</h1>
+
+    <script>
+        var MY_CLIENT_ID = 'client002';
+        var socket = io('http://localhost:3000/');
+        socket.on('connect', function() {
+            socket.emit('clientEnter', { 'clientId': MY_CLIENT_ID });
+        });
+        socket.on('ahiUpdate', function (data) {
+            console.log(data);
+        });
+    </script>
+</body>
+
+</html>
