@@ -70,7 +70,7 @@ io.on('connection', function (socket) {
     // 局部广播，本聊天室只会收到本室的消息
     io.in(data.clientId).emit('ahiUpdate', data);
   });
-  // 有聊天室上线（打开页面查看）
+  // 有聊天室上线（即：有用户打开页面查看）
   socket.on('clientEnter', function (data) {
     console.log('clientEnter', data);
     // io.emit('clientEnter', data);

@@ -20,19 +20,21 @@
         });
         socket.on('ball_online', function (chatMap) {
             console.log('ball_online', chatMap);
+            // 球重启/上线。发现有用户在线，激活上报
             if (chatMap[MY_CLIENT_ID] > 0) {
                 sendData();
             }
         });
 
         socket.on('clientEnter', function (data) {
+            // 有用户进入聊天室（在线），激活上报
             if (data.clientId == MY_CLIENT_ID) {
                 sendData();
             }
         });
         socket.on('clientLeave', function (data) {
             console.log('clientLeave', data);
-
+            // 若无客户端（页面）在线、聊天室不存在，则取消上报
             if (!(MY_CLIENT_ID in data) || (MY_CLIENT_ID in data && data[MY_CLIENT_ID] === 0)) {
                 clearInterval(timer);
                 timer = undefined;

@@ -18,7 +18,7 @@
             socket.emit('clientEnter', { 'clientId': MY_CLIENT_ID });
         });
         socket.on('ahiUpdate', function (data) {
-            console.log(data);
+            console.log(data); // 收到实时数据
         });
     </script>
 </body>
