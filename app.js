@@ -60,11 +60,17 @@ app.get('/ball1', function (req, res) {
 // socket.io
 // var chatMap = {}; // 各聊天室（即：机构），及其成员（即：浏览器页面）在线数map
 io.on('connection', function (socket) {
-  console.log('a connection established');
+  console.log('connected');
 
   socket.on('ball_enter', function (data) {
     console.log('ball_enter', data.chatRoomId);
+    socket.join(data.chatRoomId);
     io.in(data.chatRoomId).emit('ball_enter', data);
+  });
+
+  socket.on('ball_leave', function (data) {
+    console.log('ball_leave', data.chatRoomId);
+    io.in(data.chatRoomId).emit('ball_leave', data);
   });
 
   socket.on('BALL_AHI_UPDATE', function (data) {
@@ -91,7 +97,8 @@ io.on('connection', function (socket) {
     var rooms = socket.rooms;
     console.log('all rooms:', rooms);
     // 每次有人员离开，都要告诉球。若聊天室已关闭，则球停止上报数据
-    io.emit('client_leave', Object.keys(rooms));
+    // io.emit('client_leave', Object.keys(rooms));
+    Object.keys(rooms).forEach(r => io.in(r).emit('client_leave'));
     // You can loop through your rooms and emit an action here of leaving
   });
 

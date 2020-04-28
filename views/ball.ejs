@@ -12,10 +12,11 @@
     <h1>Hello Ball</h1>
 
     <script>
-        var ROOM_ID = 'room001';
-        var timer;
         var socket = io('http://localhost:3000');
-        var clientCounts = 0; // 当前客户端在线人数
+
+        var ROOM_ID = 'room001';
+        var timer; // 模拟循环任务句柄
+        var clientCounts = 0; // 当前聊天室成员（机构客户端页面）在线人数
 
         socket.on('connect', function () {
             console.log('ball connected');
@@ -26,8 +27,8 @@
             clearAll();
         });
         socket.on('ball_enter', function (data) {
-            console.log('ball_enter', data);
-            if (data.chatRoomId === ROOM_ID) {
+            console.log('ball_enter', data, 'client counts: ', clientCounts);
+            if (data.chatRoomId === ROOM_ID && clientCounts > 0) {
                 sendData();
             }
         });
@@ -37,17 +38,25 @@
                 clientCounts++;
                 sendData();
             }
+            console.log('client_enter', clientCounts);
         });
-        socket.on('client_leave', function (data) {
-            console.log('client_leave', data);
-
-            if (ROOM_ID in data) {
-                clientCounts--;
-                console.log('client left counts:', clientCounts);
-                
-                if (clientCounts === 0) {
-                    clearAll();
-                }
+        // socket.on('client_leave', function (data) {
+        //     console.log('client_leave', data, ROOM_ID);
+        //     console.log(ROOM_ID in data);
+        //     if (data.indexOf(ROOM_ID)) {
+        //         clientCounts--;
+        //         console.log('client left counts:', clientCounts);
+        //         if (clientCounts === 0) {
+        //             clearAll();
+        //         }
+        //     }
+        // });
+        socket.on('client_leave', function () {
+            console.log('client_leave');
+            clientCounts--;
+            console.log('client left counts:', clientCounts);
+            if (clientCounts === 0) {
+                clearAll();
             }
         });
 
@@ -72,6 +81,7 @@
         function clearAll() {
             clearInterval(timer);
             timer = undefined;
+            clientCounts = 0;
         }
     </script>
 </body>
