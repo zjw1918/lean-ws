@@ -58,47 +58,45 @@ app.get('/ball1', function (req, res) {
 });
 
 // socket.io
-var chatMap = {}; // 各聊天室（即：机构），及其成员（即：浏览器页面）在线数map
+// var chatMap = {}; // 各聊天室（即：机构），及其成员（即：浏览器页面）在线数map
 io.on('connection', function (socket) {
-  console.log('a user connected');
-  io.emit('ball_online', chatMap);
+  console.log('a connection established');
+
+  socket.on('ball_enter', function (data) {
+    console.log('ball_enter', data.chatRoomId);
+    io.in(data.chatRoomId).emit('ball_enter', data);
+  });
 
   socket.on('BALL_AHI_UPDATE', function (data) {
-    console.log(data);
+    console.log(JSON.stringify(data));
     // 全局广播，本聊天室会收到所有聊天室的消息
     // io.emit('ahiUpdate', data);
     // 局部广播，本聊天室只会收到本室的消息
-    io.in(data.clientId).emit('ahiUpdate', data);
+    io.in(data.chatRoomId).emit('ahiUpdate', data);
   });
   // 有聊天室上线（即：有用户打开页面查看）
-  socket.on('clientEnter', function (data) {
-    console.log('clientEnter', data);
-    // io.emit('clientEnter', data);
+  socket.on('client_enter', function (data) {
+    console.log('client_enter', data);
+    // io.emit('client_enter', data);
     // 加入聊天室
-    socket.join(data.clientId);
+    socket.join(data.chatRoomId);
     // 成员在线+1
-    data.clientId in chatMap ? chatMap[data.clientId]++ : chatMap[data.clientId] = 1;
+    // data.chatRoomId in chatMap ? chatMap[data.chatRoomId]++ : chatMap[data.chatRoomId] = 1;
     // 向球广播消息，即：喊球起来接客。没有人查看页面的话，球不用上传实时数据，节省流量/请求
-    socket.broadcast.emit('clientEnter', data);
+    socket.broadcast.emit('client_enter', data);
   });
 
   // 有人离开聊天室，成员-1，为0则关闭聊天室
   socket.on("disconnecting", function () {
     var rooms = socket.rooms;
     console.log('all rooms:', rooms);
-    Object.keys(rooms).forEach(room => {
-      if (room in chatMap) {
-        chatMap[room]--;
-        if (chatMap[room] === 0) delete chatMap[room];
-      }
-    });
     // 每次有人员离开，都要告诉球。若聊天室已关闭，则球停止上报数据
-    io.emit('clientLeave', chatMap);
+    io.emit('client_leave', Object.keys(rooms));
     // You can loop through your rooms and emit an action here of leaving
   });
 
   socket.on('disconnect', function () {
-    console.log('user disconnected');
+    console.log('disconnected');
   });
 });
 

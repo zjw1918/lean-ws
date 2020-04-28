@@ -12,30 +12,42 @@
     <h1>Hello Ball</h1>
 
     <script>
-        var MY_CLIENT_ID = 'client001';
+        var ROOM_ID = 'room001';
         var timer;
         var socket = io('http://localhost:3000');
+        var clientCounts = 0; // 当前客户端在线人数
+
         socket.on('connect', function () {
             console.log('ball connected');
+            socket.emit('ball_enter', { 'chatRoomId': ROOM_ID });
         });
-        socket.on('ball_online', function (chatMap) {
-            console.log('ball_online', chatMap);
-            if (chatMap[MY_CLIENT_ID] > 0) {
+        socket.on('disconnect', function () {
+            console.log('ball disconnected');
+            clearAll();
+        });
+        socket.on('ball_enter', function (data) {
+            console.log('ball_enter', data);
+            if (data.chatRoomId === ROOM_ID) {
                 sendData();
             }
         });
 
-        socket.on('clientEnter', function (data) {
-            if (data.clientId == MY_CLIENT_ID) {
+        socket.on('client_enter', function (data) {
+            if (data.chatRoomId == ROOM_ID) {
+                clientCounts++;
                 sendData();
             }
         });
-        socket.on('clientLeave', function (data) {
-            console.log('clientLeave', data);
+        socket.on('client_leave', function (data) {
+            console.log('client_leave', data);
 
-            if (!(MY_CLIENT_ID in data) || (MY_CLIENT_ID in data && data[MY_CLIENT_ID] === 0)) {
-                clearInterval(timer);
-                timer = undefined;
+            if (ROOM_ID in data) {
+                clientCounts--;
+                console.log('client left counts:', clientCounts);
+                
+                if (clientCounts === 0) {
+                    clearAll();
+                }
             }
         });
 
@@ -45,16 +57,21 @@
             timer = setInterval(function () {
                 var payload = {
                     api: 100,
-                    clientId: 's0001',
+                    deviceSN: 's00001',
                     spo2: [0, 1, 2, 3, 4, 5, 6, 7],
                     pr: [68, 70, 100],
                     time: new Date(),
-                    clientId: MY_CLIENT_ID,
+                    chatRoomId: ROOM_ID,
                 };
                 console.log(payload);
 
                 socket.emit('BALL_AHI_UPDATE', payload);
             }, 2000);
+        }
+
+        function clearAll() {
+            clearInterval(timer);
+            timer = undefined;
         }
     </script>
 </body>

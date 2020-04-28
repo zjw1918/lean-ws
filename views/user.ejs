@@ -12,14 +12,18 @@
     <h1>Hello User</h1>
 
     <script>
-        var MY_CLIENT_ID = 'client001';
+        var ROOM_ID = 'room001';
         var socket = io('http://localhost:3000/');
         socket.on('connect', function() {
-            socket.emit('clientEnter', { 'clientId': MY_CLIENT_ID });
+            socket.emit('client_enter', { 'chatRoomId': ROOM_ID });
         });
         socket.on('ahiUpdate', function (data) {
             console.log(data); // 收到实时数据
         });
+        socket.on('disconnect', function () {
+            console.log('user disconnect')
+        });
+
     </script>
 </body>
 
