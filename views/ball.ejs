@@ -12,50 +12,53 @@
     <h1>Hello Ball</h1>
 
     <script>
-        var socket = io('http://localhost:3000');
-
         var ROOM_ID = 'room001';
+        var DEVICE_SN = 'devcie000' + Math.round(Math.random() * 50000);
         var timer; // 模拟循环任务句柄
-        var clientCounts = 0; // 当前聊天室成员（机构客户端页面）在线人数
+        var heartBeatTimer; // 模拟心跳任务句柄
+        var clients = []; // 搜集当前有几个客户端在线
 
+        var socket = io('http://localhost:3000');
         socket.on('connect', function () {
-            console.log('ball connected');
-            socket.emit('ball_enter', { 'chatRoomId': ROOM_ID });
+            console.log('ball connected', socket.id);
+            socket.emit('ball_enter', { 'roomID': ROOM_ID, 'deviceSN': DEVICE_SN });
         });
         socket.on('disconnect', function () {
             console.log('ball disconnected');
             clearAll();
         });
         socket.on('ball_enter', function (data) {
-            console.log('ball_enter', data, 'client counts: ', clientCounts);
-            if (data.chatRoomId === ROOM_ID && clientCounts > 0) {
+            console.log('ball_enter', data, 'clients: ', clients);
+            if (data.roomID === ROOM_ID && clients.length > 0) {
                 sendData();
+                // sendHeartBeat();
             }
         });
 
         socket.on('client_enter', function (data) {
-            if (data.chatRoomId == ROOM_ID) {
-                clientCounts++;
-                sendData();
+            if (data.roomID == ROOM_ID) {
+                var index = clients.indexOf(data.socketID);
+                if (index === -1) {
+                    clients.push(data.socketID);
+                    // 防止页面多开，导致死循环
+                    socket.emit('ball_enter', { 'roomID': ROOM_ID, 'deviceSN': DEVICE_SN });
+                }
+                if (clients.length === 1) { // 只有在从0～1时，才开始发送实时数据
+                    sendData();
+                    // sendHeartBeat();
+                }
             }
-            console.log('client_enter', clientCounts);
+            console.log('client_enter', clients);
         });
-        // socket.on('client_leave', function (data) {
-        //     console.log('client_leave', data, ROOM_ID);
-        //     console.log(ROOM_ID in data);
-        //     if (data.indexOf(ROOM_ID)) {
-        //         clientCounts--;
-        //         console.log('client left counts:', clientCounts);
-        //         if (clientCounts === 0) {
-        //             clearAll();
-        //         }
-        //     }
-        // });
-        socket.on('client_leave', function () {
-            console.log('client_leave');
-            clientCounts--;
-            console.log('client left counts:', clientCounts);
-            if (clientCounts === 0) {
+        
+        socket.on('member_leave', function (roomId) {
+            console.log('member_leave');
+            var index = clients.indexOf(roomId);
+            if (index !== -1) {
+                clients.splice(index, 1);
+            }
+            console.log('client left counts:', clients);
+            if (clients.length === 0) {
                 clearAll();
             }
         });
@@ -66,11 +69,11 @@
             timer = setInterval(function () {
                 var payload = {
                     api: 100,
-                    deviceSN: 's00001',
+                    deviceSN: DEVICE_SN,
                     spo2: [0, 1, 2, 3, 4, 5, 6, 7],
                     pr: [68, 70, 100],
                     time: new Date(),
-                    chatRoomId: ROOM_ID,
+                    roomID: ROOM_ID,
                 };
                 console.log(payload);
 
@@ -78,10 +81,19 @@
             }, 2000);
         }
 
+        // function sendHeartBeat() {
+        //     if (heartBeatTimer !== undefined) return;
+        //     clearInterval(heartBeatTimer);
+        //     heartBeatTimer = setInterval(function () {
+        //         socket.emit('heart_beat', { roomID: ROOM_ID, deviceSN: DEVICE_SN });
+        //     }, 10 * 1000); // 5s 心跳
+        // }
+
         function clearAll() {
             clearInterval(timer);
+            clearInterval(heartBeatTimer);
             timer = undefined;
-            clientCounts = 0;
+            heartBeatTimer = undefined;
         }
     </script>
 </body>

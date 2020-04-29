@@ -12,32 +12,52 @@
     <h1>Hello Ball</h1>
 
     <script>
-        var MY_CLIENT_ID = 'client002';
-        var timer;
+        var ROOM_ID = 'room002';
+        var DEVICE_SN = 'devciefff1';
+        var timer; // 模拟循环任务句柄
+        var heartBeatTimer; // 模拟心跳任务句柄
+        var clients = []; // 搜集当前有几个客户端在线
+
         var socket = io('http://localhost:3000');
         socket.on('connect', function () {
-            console.log('ball connected');
+            console.log('ball connected', socket.id);
+            socket.emit('ball_enter', { 'roomID': ROOM_ID, 'deviceSN': DEVICE_SN });
         });
-        socket.on('ball_online', function (chatMap) {
-            console.log('ball_online', chatMap);
-            // 球重启/上线。发现有用户在线，激活上报
-            if (chatMap[MY_CLIENT_ID] > 0) {
+        socket.on('disconnect', function () {
+            console.log('ball disconnected');
+            clearAll();
+        });
+        socket.on('ball_enter', function (data) {
+            console.log('ball_enter', data, 'clients: ', clients);
+            if (data.roomID === ROOM_ID && clients.length > 0) {
                 sendData();
+                // sendHeartBeat();
             }
         });
 
-        socket.on('clientEnter', function (data) {
-            // 有用户进入聊天室（在线），激活上报
-            if (data.clientId == MY_CLIENT_ID) {
-                sendData();
+        socket.on('client_enter', function (data) {
+            if (data.roomID == ROOM_ID) {
+                var index = clients.indexOf(data.socketID);
+                if (index === -1) {
+                    clients.push(data.socketID);
+                }
+                if (clients.length === 1) { // 只有在从0～1时，才开始发送实时数据
+                    sendData();
+                    // sendHeartBeat();
+                }
             }
+            console.log('client_enter', clients);
         });
-        socket.on('clientLeave', function (data) {
-            console.log('clientLeave', data);
-            // 若无客户端（页面）在线、聊天室不存在，则取消上报
-            if (!(MY_CLIENT_ID in data) || (MY_CLIENT_ID in data && data[MY_CLIENT_ID] === 0)) {
-                clearInterval(timer);
-                timer = undefined;
+        
+        socket.on('member_leave', function (roomId) {
+            console.log('member_leave');
+            var index = clients.indexOf(roomId);
+            if (index !== -1) {
+                clients.splice(index, 1);
+            }
+            console.log('client left counts:', clients);
+            if (clients.length === 0) {
+                clearAll();
             }
         });
 
@@ -47,16 +67,31 @@
             timer = setInterval(function () {
                 var payload = {
                     api: 100,
-                    clientId: 's0002',
+                    deviceSN: DEVICE_SN,
                     spo2: [0, 1, 2, 3, 4, 5, 6, 7],
                     pr: [68, 70, 100],
                     time: new Date(),
-                    clientId: MY_CLIENT_ID,
+                    roomID: ROOM_ID,
                 };
                 console.log(payload);
 
                 socket.emit('BALL_AHI_UPDATE', payload);
             }, 2000);
+        }
+
+        // function sendHeartBeat() {
+        //     if (heartBeatTimer !== undefined) return;
+        //     clearInterval(heartBeatTimer);
+        //     heartBeatTimer = setInterval(function () {
+        //         socket.emit('heart_beat', { roomID: ROOM_ID, deviceSN: DEVICE_SN });
+        //     }, 10 * 1000); // 5s 心跳
+        // }
+
+        function clearAll() {
+            clearInterval(timer);
+            clearInterval(heartBeatTimer);
+            timer = undefined;
+            heartBeatTimer = undefined;
         }
     </script>
 </body>

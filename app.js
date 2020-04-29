@@ -59,18 +59,17 @@ app.get('/ball1', function (req, res) {
 
 // socket.io
 // var chatMap = {}; // 各聊天室（即：机构），及其成员（即：浏览器页面）在线数map
+// var ballArr = [];
+// var clientArr = [];
+
 io.on('connection', function (socket) {
   console.log('connected');
 
   socket.on('ball_enter', function (data) {
-    console.log('ball_enter', data.chatRoomId);
-    socket.join(data.chatRoomId);
-    io.in(data.chatRoomId).emit('ball_enter', data);
-  });
-
-  socket.on('ball_leave', function (data) {
-    console.log('ball_leave', data.chatRoomId);
-    io.in(data.chatRoomId).emit('ball_leave', data);
+    console.log('ball_enter', data.roomID, socket.id);
+    socket.join(data.roomID);
+    data.socketID = socket.id;
+    io.in(data.roomID).emit('ball_enter', data);
   });
 
   socket.on('BALL_AHI_UPDATE', function (data) {
@@ -78,19 +77,27 @@ io.on('connection', function (socket) {
     // 全局广播，本聊天室会收到所有聊天室的消息
     // io.emit('ahiUpdate', data);
     // 局部广播，本聊天室只会收到本室的消息
-    io.in(data.chatRoomId).emit('ahiUpdate', data);
+    console.log(socket.id);
+    io.in(data.roomID).emit('ahiUpdate', data);
   });
   // 有聊天室上线（即：有用户打开页面查看）
   socket.on('client_enter', function (data) {
-    console.log('client_enter', data);
+    console.log('client_enter', data, socket.id);
     // io.emit('client_enter', data);
     // 加入聊天室
-    socket.join(data.chatRoomId);
+    socket.join(data.roomID);
     // 成员在线+1
-    // data.chatRoomId in chatMap ? chatMap[data.chatRoomId]++ : chatMap[data.chatRoomId] = 1;
+    // data.roomID in chatMap ? chatMap[data.roomID]++ : chatMap[data.roomID] = 1;
     // 向球广播消息，即：喊球起来接客。没有人查看页面的话，球不用上传实时数据，节省流量/请求
-    socket.broadcast.emit('client_enter', data);
+    // socket.broadcast.emit('client_enter', data);
+    data.socketID = socket.id;
+    io.in(data.roomID).emit('client_enter', data)
   });
+
+  // socket.on("heart_beat", function (data) {
+  //   console.log('heart_beat', data);
+  //   io.in(data.roomID).emit('heart_beat', data);
+  // });
 
   // 有人离开聊天室，成员-1，为0则关闭聊天室
   socket.on("disconnecting", function () {
@@ -98,12 +105,12 @@ io.on('connection', function (socket) {
     console.log('all rooms:', rooms);
     // 每次有人员离开，都要告诉球。若聊天室已关闭，则球停止上报数据
     // io.emit('client_leave', Object.keys(rooms));
-    Object.keys(rooms).forEach(r => io.in(r).emit('client_leave'));
+    Object.keys(rooms).forEach(room => io.emit('member_leave', room));
     // You can loop through your rooms and emit an action here of leaving
   });
 
   socket.on('disconnect', function () {
-    console.log('disconnected');
+    console.log('disconnected', socket.id);
   });
 });
 

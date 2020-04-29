@@ -14,22 +14,51 @@
     <script>
         var ROOM_ID = 'room001';
         var socket = io('http://localhost:3000/');
-        var ballCounts = 0; // 球设备默认唯一，不做计数
+
+        // var heartBeatMap = {};
+        var ballMap = {}; // 在线的球
+
         socket.on('connect', function() {
-            socket.emit('client_enter', { 'chatRoomId': ROOM_ID, 'role': 'ball' });
+            console.log('user connect', socket.id);
+            socket.emit('client_enter', { 'roomID': ROOM_ID});
         });
         socket.on('ahiUpdate', function (data) {
             console.log(data); // 收到实时数据
         });
         socket.on('ball_enter', function (data) {
-            ballCounts++;
-            console.log('ball_enter', data, 'ball counts: ', ballCounts);
-            socket.emit('client_enter', { 'chatRoomId': ROOM_ID, 'role': 'ball' });
+            console.log('ball_enter', data);
+            if (!ballMap.hasOwnProperty(data.socketID)) {
+                ballMap[data.socketID] = {deviceSN: data.deviceSN}
+                // // 防止页面多开，导致死循环
+                socket.emit('client_enter', { 'roomID': ROOM_ID});
+            }
         });
         socket.on('disconnect', function () {
             console.log('user disconnect')
         });
-
+        // socket.on('heart_beat', function (data) {
+        //     console.log('get heart beat from ball', data);
+        //     // heartBeatMap[data.deviceSN] = Date.now();
+        // });
+        socket.on('member_leave', function (roomId) {
+            console.log('member_leave');
+            if (ballMap.hasOwnProperty(roomId)) {
+                delete ballMap[roomId];
+            }
+            console.log('balls left counts:', ballMap);
+        });
+        
+        // setInterval(() => {
+        //     console.log('heart beat check/10s', heartBeatMap);
+        //     Object.keys(heartBeatMap).forEach(function (roomId) {
+        //         if (Date.now() - heartBeatMap[roomId] > 10 * 1000) {
+        //             console.log(roomId, 'offline');
+        //             delete heartBeatMap[roomId];
+        //         } else {
+        //             console.log(roomId, 'online');
+        //         }
+        //     })
+        // }, 10 * 1000);
     </script>
 </body>
 
