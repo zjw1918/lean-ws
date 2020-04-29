@@ -27,13 +27,13 @@
             console.log('ball disconnected');
             clearAll();
         });
-        socket.on('ball_enter', function (data) {
-            console.log('ball_enter', data, 'clients: ', clients);
-            if (data.roomID === ROOM_ID && clients.length > 0) {
-                sendData();
-                // sendHeartBeat();
-            }
-        });
+        // socket.on('ball_enter', function (data) {
+        //     console.log('ball_enter', data, 'clients: ', clients);
+        //     if (data.roomID === ROOM_ID && clients.length > 0) {
+        //         sendData();
+        //         // sendHeartBeat();
+        //     }
+        // });
 
         socket.on('client_enter', function (data) {
             if (data.roomID == ROOM_ID) {
