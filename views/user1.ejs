@@ -27,7 +27,7 @@
         });
         socket.on('ball_enter', function (data) {
             console.log('ball_enter', data);
-            if (!ballMap.hasOwnProperty(data.socketID)) {
+            if (ROOM_ID === data.roomID && !ballMap.hasOwnProperty(data.socketID)) {
                 ballMap[data.socketID] = {deviceSN: data.deviceSN}
                 // // 防止页面多开，导致死循环
                 socket.emit('client_enter', { 'roomID': ROOM_ID});
