@@ -16,7 +16,7 @@
     "express": "^4.16.4",
     "leancloud-storage": "^3.11.0",
     "leanengine": "^3.3.2",
-    "socket.io": "^2.3.0"
+    "socket.io": "^2.4.0"
   },
   "devDependencies": {
     "nodemon": "^1.18.7"
